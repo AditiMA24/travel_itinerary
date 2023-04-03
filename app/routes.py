@@ -23,7 +23,7 @@ def index():
 #     return render_template('questionnaire.html',  title='What are you looking for', form=form)
 
 
-@app.route('/questionnaire', methods=['GET'])
+@app.route('/questionnaire', methods=['GET', 'POST'])
 def questionnaire():
     form = LoginForm()
     # # Get input data from the form
