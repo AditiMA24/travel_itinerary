@@ -1,3 +1,5 @@
+{% extends "base.html" %}
+
 {% block content %}
     <h1>TellUs</h1>
     <form action="" method="post" novalidate>
@@ -5,13 +7,12 @@
         <p>
             {{ form.name.label }}<br>
             {{ form.name(size=32) }}<br>
-            {% endfor %}
         </p>
         <p>
             {{ form.destination.label }}<br>
             {{ form.destination(size=32) }}<br>
-            <!-- {% for error in form.destination.errors %}
-            <span style="color: red;">[{{ error }}]</span> -->
+            {% for error in form.destination.errors %}
+            <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
         </p>
         

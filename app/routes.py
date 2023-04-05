@@ -40,7 +40,7 @@ def questionnaire():
     # # This is where you would add your itinerary generation code
 
     # Render the results template with the generated itinerary
-    return render_template('quesntionnaire.html',  title='TellUs', form=form)
+    return render_template('questionnaire.html',  title='TellUs', form=form)
 
 # if __name__ == '__main__':
 #     app.run(debug=True)
