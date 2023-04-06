@@ -4,9 +4,10 @@ from wtforms.validators import DataRequired, Optional
 
 class LoginForm(FlaskForm):
     name = StringField('Name', validators=[Optional()])
-    # age = IntegerField('age', validators=[Optional()])
-    # gender = SelectField('gender', choices=[('male','Male'), ('female', 'Female'), ('other', 'Other'), ('no' 'Prefer not to say'], validators=[Optional()])
+    # age = IntegerField('Age', validators=[Optional()])
+    # gender = SelectField('Gender', choices=[('male','Male'), ('female', 'Female'), ('other', 'Other'), ('no' , 'Prefer not to say')], validators=[Optional()])
     destination = StringField('Destination', validators=[DataRequired()]) 
-    # start = DateTimeField('start', format='%Y-%m-%d %H:%M:%S', validators=[DataRequired()])
-    # end = DateTimeField('end', format='%Y-%m-%d %H:%M:%S',, validators=[DataRequired()])
+    start = DateTimeField('Start Date', format='%Y-%m-%d', validators=[DataRequired()])
+    end = DateTimeField('End Date', format='%Y-%m-%d', validators=[DataRequired()])
+    # prefrences= StringField('Prefrence', validators=[Optional()])
     submit = SubmitField('Submit')
