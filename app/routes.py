@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for
+from flask import render_template, request, flash, redirect, url_for, session
 from app import app
 from app.forms import LoginForm
 
@@ -37,16 +37,33 @@ def questionnaire():
 
     return render_template('questionnaire.html',  title='TellUs', form=form)
 
-@app.route('/submit_form', methods=['POST'])
-def submit_form():
+
+@app.route('/form', methods=['GET', 'POST'])
+def form():
     form = LoginForm()
-    # Get input data from the form
-    destination = request.form['destination']
-    duration = datetime.strptime(request.form['end'], "%Y/%m/%d") - datetime.strptime(request.form['start'], "%Y/%m/%d")
-    # age = request.form['Age']
-    # gender = request.form['Gender']
-    start = request.form['Start Date']
-    end = request.form['End Date']
+    if form.validate_on_submit():
+        session['Destination'] = form.destination.data
+        session['Start Date'] = form.start.data
+        session['End Date'] = form.end.data
+        session['duration'] = datetime.strptime(session['End Date'], "%Y/%m/%d") - datetime.strptime(session['Start Date'], "%Y/%m/%d")
+        # process the form data and present the output
+        return render_template('output.html', destination=session['Destination'], start_date=session['Start Date'], end_date=session['End Date'])
+    return render_template('form.html', form=form)
+
+# if __name__ == '__main__':
+#     app.run()
+
+
+# @app.route('/submit_form', methods=['POST'])
+# def submit_form():
+#     form = LoginForm()
+#     # Get input data from the form
+#     destination = request.form['destination']
+#     duration = datetime.strptime(request.form['end'], "%Y/%m/%d") - datetime.strptime(request.form['start'], "%Y/%m/%d")
+#     # age = request.form['Age']
+#     # gender = request.form['Gender']
+#     start = request.form['Start Date']
+#     end = request.form['End Date']
     # prefrences=request.form['Prefrences']
 
     
