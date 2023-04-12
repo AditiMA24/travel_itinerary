@@ -22,10 +22,10 @@ import sys
 
 
 
-@app.route('/test_output')
-def test_output():
+@app.route('/output_0')
+def output_0():
     # user = {'name': 'Gby'}
-    return render_template('test_output.html', title='test_Output') #,user=user            
+    return render_template('output_0.html', title='test_Output') #,user=user            
     
         
 
@@ -35,11 +35,12 @@ def questionnaire():
     # destination = request.form['destination']
     # # Render the results template with the generated itinerary
     if form.validate_on_submit():
+        session['Name'] = form.name.data
         session['Destination'] = form.destination.data
         session['Start Date'] = form.start.data
         session['End Date'] = form.end.data
-        session['duration'] = datetime.strptime(session['End Date'], "%Y/%m/%d") - datetime.strptime(session['Start Date'], "%Y/%m/%d")
-        flash("Planning trip to {}" .format(session['Destination']))
+        # session['duration'] = datetime.strptime(session['End Date'], "%Y/%m/%d") - datetime.strptime(session['Start Date'], "%Y/%m/%d")
+        # flash("Planning trip to {}" .format(session['Destination']))
         return redirect(url_for('output_0'))
     return render_template('questionnaire.html',  title='TellUs', form=form)
 
@@ -47,34 +48,31 @@ def questionnaire():
 
 # from requests import requests
  
-import requests 
-import os
-import openai
+# import requests 
+# import os
+# import openai
 
 
-@app.route('/output_0', methods=['POST'])
-def processing():
+# @app.route('/output_1', methods=['POST'])
+# def output_1():
 
-#     # # Generate the itinerary based on the input data
-#     # # This is where you would add your itinerary generation code
-#     #Step 1: Ask ChatGPT
-    openai.api_key = "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"
-    openai.Model.list()
-    response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=[ 
-        {"role": "system", "content": "You are a chatbot"},
-        {"role": "user", "content":  " duration day trip to {}"              
-         .format(session['Destination']) ".I like prefrences Generate a complete itenary"}
-        ]
-)
-
-    result = ''
-    for choice in response.choices:
-        result += choice.message.content
-    print(result)
-    # # Render the results template with the generated itinerary
-    return render_template('output_0.html',  title='Processing')
+# #     #Step 1: Ask ChatGPT
+#     openai.api_key = "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"
+#     openai.Model.list()
+#     response = openai.ChatCompletion.create(
+#     model="gpt-3.5-turbo",
+#     messages=[ 
+#         {"role": "system", "content": "You are a chatbot"},
+#         {"role": "user", "content":  " duration day trip to {}"              
+#          .format(session['Destination']) ".I like prefrences Generate a complete itenary"}
+#         ]
+# )
+#     result = ''
+#     for choice in response.choices:
+#         result += choice.message.content
+#     print(result)
+#     # # Render the results template with the generated itinerary
+#     return render_template('output_1.html',  title='Processing')
 
 # if __name__ == '__main__':
 #     app.run(debug=True)
