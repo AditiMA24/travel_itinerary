@@ -6,6 +6,8 @@ import requests
 import os
 import openai
 import json
+import pandas as pd
+
 
 
 
@@ -48,26 +50,65 @@ def questionnaire():
         # flash("Planning trip to {}" .format(session['Destination']))
         
         # Define the prompt for generating the travel itinerary
-        prompt = "Generate a travel itinerary for a trip to {}" .format(session['Destination'])
-        # Set the parameters for the API request
-        model_engine = "text-davinci-002"
-        temperature = 0.7
-        max_tokens = 1024
-
-        # Generate the travel itinerary using the OpenAI API
-        response = openai.Completion.create(
-            engine=model_engine,
-            prompt=prompt,
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
-
+        response = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=[
+            {"role": "system", "content": "You are a chatbot"},
+            {"role": "user", "content": "Generate a complete itinerary with time and destination for a one day trip to {}" .format(session['Destination'])},
+            {"role": "user", "content": "Format all the place name in uppercase. Capitalize AM and PM in time." },
+            {"role": "user", "content": "Separate time and destination with colan" },
+        ]
+)
         # Extract the generated travel itinerary
-        itinerary = response.choices[0].text
-        
-        flash(itinerary) 
+        result = ''
+        for choice in response.choices:
+            result += choice.message.content
+        # return result
+        # itinerary = response.choices[0].text
+        # return itinerary
+        # flash(itinerary) 
 
-        return redirect(url_for('output_0'))
+        #convert paragraph result to list with one sentence as an element
+        my_list = [result]
+        my_list=my_list[0].replace('\n\n','\n').split('\n') 
+
+        #keep element only if it contains am or pm
+        itinerary=[]
+        for i in range(len(my_list)):
+            if 'AM:'  in my_list[i]:
+                itinerary=itinerary+[my_list[i]]
+
+            elif 'PM:' in my_list[i]:
+                itinerary=itinerary+[my_list[i]]
+
+        #create a data frame
+        data=[tuple(itinerary[i].split(': ')) for i in range(len(itinerary))]
+        df = pd.DataFrame(data, columns =['Time', 'Recommendation'])
+
+        ##
+        def listToString(recommendation):
+            str1 = " "
+            return (str1.join(recommendation))
+
+        ###Place extraction
+        def place_extract(recommendation):
+            text=recommendation
+            text.split()
+            destination=[]
+            for i in text.split():
+                if i.isupper()==True:
+                    destination+=[i]
+
+            destination= listToString(destination)
+            return destination.replace( ',', '')
+        
+        df['destination']=df['Recommendation'].apply(lambda x: place_extract(x) )
+        return df
+
+
+
+
+        return redirect(url_for('output_0'), itinerary=itinerary)
     return render_template('questionnaire.html',  title='TellUs', form=form)
 
 

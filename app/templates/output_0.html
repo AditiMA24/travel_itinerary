@@ -5,5 +5,11 @@
 
     <h1>Welcome {{session['Name']}}!</h1>
     <h2>We are planning your trip to {{session['Destination']}} </h2>
+    <h2>Here is the result </h2>
+    <body>
+        <div>
+            {{itinerary}}
+        </div>
+    </body>
 <!--  -->
 {% endblock %}

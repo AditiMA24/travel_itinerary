@@ -1,6 +1,12 @@
 from flask import render_template, request, flash, redirect, url_for, session
 from app import app
 from app.forms import LoginForm
+# from requests import requests
+import requests 
+import os
+import openai
+import json
+
 
 
 
@@ -16,16 +22,16 @@ def index():
 
 # ##Imports to generate itinerary
 from datetime import datetime
-# import requests 
-# import os
-# import openai
+import sys
+# print(sys.executable)
 
 
 
-@app.route('/test_output')
-def test_output():
+
+@app.route('/output_0')
+def output_0():
     # user = {'name': 'Gby'}
-    return render_template('test_output.html', title='test_Output') #,user=user            
+    return render_template('output_0.html', title='test_Output') #,user=user            
     
         
 
@@ -35,76 +41,60 @@ def questionnaire():
     # destination = request.form['destination']
     # # Render the results template with the generated itinerary
     if form.validate_on_submit():
+        session['Name'] = form.name.data
         session['Destination'] = form.destination.data
         session['Start Date'] = form.start.data
         session['End Date'] = form.end.data
         # session['duration'] = datetime.strptime(session['End Date'], "%Y/%m/%d") - datetime.strptime(session['Start Date'], "%Y/%m/%d")
-        flash("Planning trip to {}" .format(session['Destination']))
-        return redirect(url_for('test_output'))
-        # return redirect(url_for('test_output'))
-        # return redirect(url_for('output'))
-        # flash('Login requested for {}'.format(
-            # form.name.data))   
-        # return redirect(url_for('index'))
+        # flash("Planning trip to {}" .format(session['Destination']))
+        
+        # Define the prompt for generating the travel itinerary
+        response = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=[
+            {"role": "system", "content": "You are a chatbot"},
+            {"role": "user", "content": "Generate a complete itinerary for a one day trip to" {{(session['Destination'])}} "I prefer adventure. Give me time and destination." },
+            {"role": "user", "content": "Format all the place name in uppercase. Capitalize AM and PM in time." },
+            {"role": "user", "content": "Separate time and destination with colan" },
+        ]
+)
+        # Extract the generated travel itinerary
+        result = ''
+        for choice in response.choices:
+            result += choice.message.content
+        return result
+        # itinerary = response.choices[0].text
+        # return itinerary
+        # flash(itinerary) 
 
+        return redirect(url_for('output_0'), itinerary=itinerary)
     return render_template('questionnaire.html',  title='TellUs', form=form)
 
 
 
 
-@app.route('/form', methods=['GET', 'POST'])
-def form():
-    form = LoginForm()
-    if form.validate_on_submit():
 
-        session['Destination'] = form.destination.data
-        session['Start Date'] = form.start.data
-        session['End Date'] = form.end.data
-        session['duration'] = datetime.strptime(session['End Date'], "%Y/%m/%d") - datetime.strptime(session['Start Date'], "%Y/%m/%d")
-        # process the form data and present the output
-        flash('Login requested for {}'.format(
-            session['Destination']))
+# @app.route('/output_1')
+# def output_1():
+#     # Define the prompt for generating the travel itinerary
+#     prompt = "Generate a travel itinerary for a trip to {}" .format(session['Destination'])
+#     # Set the parameters for the API request
+#     model_engine = "text-davinci-002"
+#     temperature = 0.7
+#     max_tokens = 1024
 
-        # return render_template('output.html', destination=session['Destination'], start_date=session['Start Date'], end_date=session['End Date'])
-    # return render_template('form.html', form=form)
+#     # Generate the travel itinerary using the OpenAI API
+#     response = openai.Completion.create(
+#         engine=model_engine,
+#         prompt=prompt,
+#         temperature=temperature,
+#         max_tokens=max_tokens
+#     )
 
-# if __name__ == '__main__':
-#     app.run()
-
-
-# @app.route('/submit_form', methods=['POST'])
-# def submit_form():
-#     form = LoginForm()
-#     # Get input data from the form
-#     destination = request.form['destination']
-#     duration = datetime.strptime(request.form['end'], "%Y/%m/%d") - datetime.strptime(request.form['start'], "%Y/%m/%d")
-#     # age = request.form['Age']
-#     # gender = request.form['Gender']
-#     start = request.form['Start Date']
-#     end = request.form['End Date']
-    # prefrences=request.form['Prefrences']
-
+#     # Extract the generated travel itinerary
+#     itinerary = response.choices[0].text
     
+#     flash(itinerary) 
 
-# #     # # Generate the itinerary based on the input data
-# #     # # This is where you would add your itinerary generation code
-# #     #Step 1: Ask ChatGPT
-#     openai.api_key = "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"
-#     openai.Model.list()
-#     response = openai.ChatCompletion.create(
-#     model="gpt-3.5-turbo",
-#     messages=[
-#             {"role": "system", "content": "You are a chatbot"},
-#             {"role": "user", "content": duration "day trip to" destination".I like "prefrences "Generate a complete itenary"},
-#         ]
-# )
-
-#     # result = ''
-#     # for choice in response.choices:
-#     #     result += choice.message.content
-
-#     # # Render the results template with the generated itinerary
-    # return render_template('submit_form.html',  title='Processing')
-
-# if __name__ == '__main__':
-#     app.run(debug=True)
+#     # Render the itinerary on a template
+#     return render_template('output_1.html', itinerary=itinerary, title='Processing')
