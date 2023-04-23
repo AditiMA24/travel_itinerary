@@ -8,7 +8,7 @@ import openai
 import json
 import pandas as pd
 
-
+openai.api_key = ""
 
 
 
@@ -103,7 +103,8 @@ def questionnaire():
             return destination.replace( ',', '')
         
         df['destination']=df['Recommendation'].apply(lambda x: place_extract(x) )
-        return df
+        return df['destination'][2]
+    # return result
 
 
 
