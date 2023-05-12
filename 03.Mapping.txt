@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Map</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.css" />
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js"></script>
+</head>
+<body>
+  <div id="map" style="height: 600px;"></div>
+  <script>
+    // Initialize the map
+    var map = L.map('map', {
+      minZoom: 4,
+      maxZoom: 18,
+      maxBounds: [[35, 65], [5, 90]]
+    }).setView([22, 77], 5);
+
+    // Add a base map
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'Map data &copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Define your places and their coordinates
+    var places = [
+      {
+        name: "Mumbai",
+        latitude: 19.0760,
+        longitude: 72.8777,
+        description: "This is Mumbai, the largest city in India."
+      },
+      {
+        name: "Delhi",
+        latitude: 28.7041,
+        longitude: 77.1025,
+        description: "This is Delhi, the capital city of India."
+      },
+      {
+        name: "Bangalore",
+        latitude: 12.9716,
+        longitude: 77.5946,
+        description: "This is Bangalore, the technology hub of India."
+      }
+    ];
+
+    // Loop through the places and add markers to the map
+    var markers = places.map(function(place) {
+      var marker = L.marker([place.latitude, place.longitude]).addTo(map);
+      // Add a tooltip to the marker
+      marker.bindTooltip(place.name);
+      // Add a popup to the marker
+      marker.bindPopup(place.description);
+      return marker;
+    });
+
+    // Create a polyline to connect the markers
+    var polyline = L.polyline(markers.map(function(marker) {
+      return marker.getLatLng();
+    }), {
+      color: 'green',
+      weight: 3,
+      opacity: 0.8,
+      smoothFactor: 1
+    }).addTo(map);
+  </script>
+</body>
+</html>
