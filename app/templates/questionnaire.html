@@ -14,7 +14,7 @@
             {% for error in form.destination.errors %}
             <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
-        </p>
+        </p>   
 
         <p>
             {{ form.start.label }}<br>
@@ -30,6 +30,24 @@
             {% for error in form.end.errors %}
             <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
+        </p>
+
+         <p>
+            {{ form.duration.label }}<br>
+            {{ form.duration(size=32) }}<br>
+            {% for error in form.duration.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+
+        <p>
+            {{ form.preference1.label }}<br>
+            {{ form.preference1(size=32) }}<br>
+        </p>
+
+        <p>
+            {{ form.preference2.label }}<br>
+            {{ form.preference2(size=32) }}<br>
         </p>
         
         <p>{{ form.submit() }}</p>

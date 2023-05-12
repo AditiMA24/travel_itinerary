@@ -16,7 +16,6 @@ openai.api_key = ""
 @app.route('/')
 @app.route('/index')
 def index():
-    # user = {'name': 'Gby'}
     return render_template('index.html', title='Home') #,user=user
 
 
@@ -31,9 +30,10 @@ from datetime import datetime, timedelta
 import os
 import openai
 import spacy
+import numpy as np
 
 ##KEYS
-openai.api_key = ""
+openai.api_key = "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"
 openai.Model.list();
 dist_key="ScsWl6XfkOpZd2KHCATUMQpsHcNtX"
 
@@ -119,47 +119,10 @@ def preference_check(category,preference):
 
 
 
-## Distance Matrix function
-### Obtain the distance and time between the first and the following place
-def distance_API(origin_point, destination_point):
-    if origin_point!=destination_point:
-        origin,destination=origin_point, destination_point
-        distance_url =f"https://api.distancematrix.ai/maps/api/distancematrix/json?origins="+origin+"&destinations="+destination+"&key="+dist_key
-        r = requests.get(distance_url)
-        dist_result=r.json()['rows'][0]['elements'][0]
-        if dist_result['status']=='ZERO_RESULTS':
-            dist_result_set.append('None') 
-            time_result_set.append('None')
-        elif dist_result['status']=='OK':
-            dist_result_set.append(dist_result['distance']['text'])
-            time_result_set.append(dist_result['duration']['text'])
-    else:
-        dist_result_set.append('None') 
-        time_result_set.append('None')
-
-
-
- ##Extract information and append to the dataframe
-def time_to_decimal(time_str):
-    if time_str== 'None':
-        return None
-    parts = time_str.split()
-    hours, mins = 0, 0
-    for i, part in enumerate(parts):
-        if part.isdigit() and i < len(parts) - 1:
-            if parts[i + 1].startswith('hour'):
-                hours = int(part)
-            elif parts[i + 1].startswith('min'):
-                mins = int(part)
-            else:
-                return None
-    return round(hours + mins / 60, 3)
-
 
 
 @app.route('/output_0')
 def output_0():
-    # user = {'name': 'Gby'}
     return render_template('output_0.html', title='test_Output') #,user=user            
     
 
@@ -174,14 +137,14 @@ def questionnaire():
     if form.validate_on_submit():
         session['Name'] = form.name.data
         session['Destination'] = form.destination.data
-        session['Start Date'] = form.start.data
-        session['End Date'] = form.end.data
-        # session['duration'] = datetime.strptime(session['End Date'], "%Y/%m/%d") - datetime.strptime(session['Start Date'], "%Y/%m/%d")
-        # flash("Planning trip to {}" .format(session['Destination']))
+        session['Duration'] = form.duration.data
+        session['Preference1'] = form.preference1.data
+        session['Preference2'] = form.preference2.data
+
         
         place= format(session['Destination'])
-        duration=2 #this part will become a variable
-        preference="histroy" #this part will become a variable
+        duration=int((session['Duration'])) 
+        preference=format(session['Preference1'])
 
         
         # initialize
@@ -189,11 +152,13 @@ def questionnaire():
         iter=0
         max_iter=20
         count=[100 for _ in range(duration)]
+        pref_count=0
+        pref_iter=0
 
         while any(element > value for element in count)==True:
             if iter<max_iter: 
             
-                #Preference Loop starts here
+                # #Preference Loop starts here
                 while pref_count<70 and pref_iter<max_iter: 
                     response = openai.ChatCompletion.create(
                     model="gpt-3.5-turbo",
@@ -207,6 +172,7 @@ def questionnaire():
                             {"role": "user", "content": "Each suggestion and address needs to be on the same line. Here is an example that you should strictly follow"},
                             {"role": "user", "content": "10:30 AM: Head to the Kolukkumalai Tea Estate, one of the highest tea plantations in the world. Address: Kolukkumalai Tea Estate, P.O, Kannan Devan Hills, Kerala. (Latitude: 27.1750° N, Longitude: 78.0422° E)"},
                             {"role": "user", "content": "7:00 PM: Athirappilly Road, Pariyaram, Kerala 680724. (Latitude: 10.2792° N, Longitude: 76.5674° E)"},
+                            {"role": "user", "content": "Do not number the list"},
                         ]
                     )
 
@@ -375,44 +341,214 @@ def questionnaire():
         for i in range(len(df['destination'])):
             df['destination_set'][i]=destination_set
 
-            
-
-        # return f"({itinerary_destination_set},{suggestion_destination_set})"
-        return f"{df['destination_set'][0]}"
         
+        ###Maximum travel time 6 hours for a day based on this allot time slot to every activity and drop what exceeds the day trip limit:
+        df['cumulative_sum'] = df.groupby('day')['time_to_next_GPT'].transform(pd.Series.cumsum)
+
+        threshold =  5 #maximum travel time set to 5 hours
+        def time_limit(cum_time):
+            if cum_time<=threshold:
+                return True
+            else:
+                return False
+            
+        df['within_time_limit']=df['cumulative_sum'].apply(lambda x: time_limit(x) )
+
+        #Convert time format
+        df['Time'] = pd.to_datetime(df['Time'], format='%I:%M %p')
+        df['Time'] = df['Time'].dt.time
+        df['time_new'] = df['Time'] 
+
+        # Group the DataFrame by the 'day' column
+        groups = df.groupby('day')
+
+        # Iterate over each group
+        for day, group in groups:
+            for i in range(1, len(group['Time'])):
+                if group['has_meal'].iloc[i] == 0:
+                    original_time = pd.to_datetime(str(group['time_new'].iloc[i])).time()
+                    add = 2 + group['time_to_next_GPT'].iloc[i-1]
+                else:
+                    original_time = pd.to_datetime(str(group['time_new'].iloc[i])).time()
+                    add = 1 + group['time_to_next_GPT'].iloc[i-1]
+                    
+                hours_to_add = int(add)
+                minutes_to_add = int(hours_to_add * 60)
+                duration = pd.Timedelta(hours=hours_to_add, minutes=minutes_to_add)
+                new_datetime = pd.Timestamp.combine(pd.to_datetime('today'), original_time) + duration
+                new_time = new_datetime.time()
+                
+                # Update the 'time_new' column of the current group
+                group['time_new'].iloc[i] = new_time
+                
+                # Update the corresponding rows in the original DataFrame
+                df.loc[group.index] = group    
 
 
+        # Get the unique values from the 'day' column
+        unique_days = df['day'].unique()
+
+        # Create an empty dictionary to store the DataFrames
+        dfs_by_day = {}
+
+        # Iterate over the unique days
+        for day in unique_days:
+            # Create a DataFrame for the current day using boolean indexing
+            df_day = df[df['day'] == day].copy()
+
+            # Store the DataFrame in the dictionary with the day as the key
+            dfs_by_day[day] = df_day
 
 
+        def get_distance_API(origin_point, destination_point):
+            if origin_point!=destination_point:
+                origin,destination=origin_point, destination_point
+                key="ScsWl6XfkOpZd2KHCATUMQpsHcNtX"
+                distance_url =f"https://api.distancematrix.ai/maps/api/distancematrix/json?origins="+origin+",{place}&destinations="+destination+",{place}&key="+key
+                r = requests.get(distance_url)
+                dist_resultnew=r.json()['rows'][0]['elements'][0]
+                if dist_resultnew['status']=='ZERO_RESULTS':
+                    print("Not found")
+                elif dist_resultnew['status']=='OK':
+                    time_reqd=dist_resultnew['duration']['text']
+                    return time_reqd
+                else:
+                    print("Not found")
 
-        return redirect(url_for('output_0'), itinerary=itinerary)
+        # Iterate over each day and its corresponding DataFrame
+        for day, df_day in dfs_by_day.items():
+            # Calculate the sum of 'within_time_limit' for the current day
+            sum_within_time_limit = df_day['within_time_limit'].sum()
+
+            # Check if the sum is less than 2 for the current day
+            if sum_within_time_limit < 2:
+                # Check if there are at least two destinations in the DataFrame
+                if len(df_day) > 2:
+                    first_destination = df_day['destination'].iloc[0]  # Get the first destination from the DataFrame
+
+                    # # Check if the length of 'further_destination_set' matches the number of rows in the DataFrame
+                    for index, destination in df_day['destination'].iloc[1:].items():
+                        time_reqd = time_to_decimal(get_distance_API(first_destination, destination))
+                                # print(dist_result)
+                        place_reqd = None
+                        if time_reqd is not None and time_reqd<6:
+                            place_reqd = destination
+                            index_place=index
+                            break
+                        else:
+                            MAECO=1357 #not within 6 hours
+                            print(f"Day{day}- not within 6 hrs")
+
+                        
+                    if place_reqd is not None:
+                        df_day['final_destination'] = df_day['destination'][index_place:]
+                        final_dist_result_set = []
+                        final_time_result_set = []
+                        final_destination_set=list(df_day['final_destination_set'])
+
+                    for i in range(len(df_day['final_destination_set'])):
+                        if i + 1 < len(df_day['final_destination_set']):
+                            dist_result = distance_API(df_day['final_destination_set'].iloc[i],
+                            df_day['final_destination_set'].iloc[i + 1])
+                        if dist_result['status'] == 'OK':
+                            final_dist_result_set.append(dist_result['distance']['text'])
+                            final_time_result_set.append(dist_result['duration']['text'])
+                        else:
+                            final_dist_result_set.append('None')
+                            final_time_result_set.append('None')
+
+                            final_time = [time_to_decimal(t) for t in final_time_result_set]
+                            final_time.append(0)  # Account for no next time at the ending point
+                            final_dist_result_set.append(0)  # Account for no next distance and time at the ending point
+                            df_day['final_time_to_next_GPT'] = final_time
+                            df_day['final_distance_to_next_GPT'] = final_dist_result_set
+                            df_day = df_day[df_day.final_distance_to_next_GPT != 'None']
+                            df_day = df_day.reset_index(drop=True)
+
+                            final_destination_set = list(df_day['destination'])
+                            df_day['final_destination_set'] = final_destination_set
+
+                            threshold = 6
+                            df_day['final_cumulative_sum'] = df_day['final_time_to_next_GPT'].cumsum()
+                            df_day['final_within_time_limit'] = df_day['final_cumulative_sum'].apply(lambda x: x <= threshold)
+                            df_day['final_value_lagged'] = df_day['final_within_time_limit'].shift(1)
+                            df_day['final_value_lagged'].iloc[0] = True
+                            df_day = df_day.drop('final_within_time_limit', axis=1)
+                            df_day = df_day.rename(columns={'final_value_lagged': 'final_within_time_limit'})
+
+                else:
+                    MAECO=2468
+                    print(f"For Day {day}: There are not enough destinations in the DataFrame.")
+                    
+
+            else:
+                print(f"For Day {day}: Sum of 'within_time_limit' is greater than or equal to 2.")
+                
+
+
+        for day, df_day in dfs_by_day.items():
+            # Calculate the sum of 'within_time_limit' for the current day
+            sum_within_time_limit = df_day['within_time_limit'].sum()
+
+            # Check if the sum is less than 2 for the current day
+            if sum_within_time_limit < 2:
+                # Check if there are at least two destinations in the DataFrame
+                if len(df_day) > 2:
+                    first_destination = df_day['destination'].iloc[0]
+                    if MAECO ==1357:
+                        prompt = f"You are a chatbot\nUser: Give me some undiscovered tourist places to visit in {first_destination}.\nUser: Format: 1. Reply with a one-line answer with only 3-4 places separated by commas. 2. Please do not put a full stop at the end of the result."
+                        response = openai.Completion.create(
+                            model="text-davinci-003",
+                            prompt=prompt,
+                            max_tokens=50,
+                            n=1,
+                            stop=None,
+                            temperature=0.7,
+                            top_p=1,
+                            frequency_penalty=0,
+                            presence_penalty=0,
+                        )
+
+                        result = response.choices[0].text.strip()
+                        
+                        print(f"To make the most of day {day} of your trip, {result} are some popular tourist destinations that should not be missed when visiting {first_destination}.")
+
+
+        for day, df_day in dfs_by_day.items():
+            # Calculate the sum of 'within_time_limit' for the current day
+            sum_within_time_limit = df_day['within_time_limit'].sum()
+
+            # Check if the sum is less than 2 for the current day
+            if sum_within_time_limit < 2:
+                first_destination = df_day['destination'].iloc[0]
+                
+                # Check if there are at least two destinations in the DataFrame
+                if len(df_day) <= 2:
+                    prompt = f"You are a chatbot\nUser: Give me some undiscovered tourist places to visit in {first_destination}.\nUser: Format: 1. Reply with a one-line answer with only 3-4 places separated by commas. 2. Please do not put a full stop at the end of the result."
+                    response = openai.Completion.create(
+                        model="text-davinci-003",
+                        prompt=prompt,
+                        max_tokens=50,
+                        n=1,
+                        stop=None,
+                        temperature=0.7,
+                        top_p=1,
+                        frequency_penalty=0,
+                        presence_penalty=0,
+                    )
+
+                    result = response.choices[0].text.strip()
+                    
+                    print(f"To make the most of day {day} of your trip, {result} are some offbeat tourist destinations that should not be missed when visiting {first_destination}.")
+
+        #Save Results for Mapping: destinantions to plot for itinerary purpose
+        itinerary=df[df['within_time_limit']==True]
+        suggestion=df[df['within_time_limit']==False]
+        itinerary_destination_set=list(itinerary['destination'])
+        suggestion_destination_set=list(suggestion['destination'])
+
+
+        return f"{itinerary_destination_set}"
     return render_template('questionnaire.html',  title='TellUs', form=form)
 
 
-
-
-
-# @app.route('/output_1')
-# def output_1():
-#     # Define the prompt for generating the travel itinerary
-#     prompt = "Generate a travel itinerary for a trip to {}" .format(session['Destination'])
-#     # Set the parameters for the API request
-#     model_engine = "text-davinci-002"
-#     temperature = 0.7
-#     max_tokens = 1024
-
-#     # Generate the travel itinerary using the OpenAI API
-#     response = openai.Completion.create(
-#         engine=model_engine,
-#         prompt=prompt,
-#         temperature=temperature,
-#         max_tokens=max_tokens
-#     )
-
-#     # Extract the generated travel itinerary
-#     itinerary = response.choices[0].text
-    
-#     flash(itinerary) 
-
-#     # Render the itinerary on a template
-#     return render_template('output_1.html', itinerary=itinerary, title='Processing')
