@@ -40,8 +40,8 @@ dist_key="ScsWl6XfkOpZd2KHCATUMQpsHcNtX"
 
 #####Defining some useful functions that will be used
 ### NLP Function
-# pip istall spacy
-# pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.0.0/en_core_web_sm-3.0.0.tar.gz
+#pip install spacy
+#pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.0.0/en_core_web_sm-3.0.0.tar.gz
 adventurous_trip_words = ["Exploration", "Adventure","Trekking","Hiking","Mountaineering",
                           "Climbing","Rafting","Canyoning","Skydiving","Bungee jumping",
                           "Paragliding","Zip-lining","Safari", "Wildlife","Camping",
@@ -174,20 +174,21 @@ def questionnaire():
     if form.validate_on_submit():
         session['Name'] = form.name.data
         session['Destination'] = form.destination.data
-        session['Start Date'] = form.start.data
-        session['End Date'] = form.end.data
+        
         # session['duration'] = datetime.strptime(session['End Date'], "%Y/%m/%d") - datetime.strptime(session['Start Date'], "%Y/%m/%d")
         # flash("Planning trip to {}" .format(session['Destination']))
         
         place= format(session['Destination'])
         duration=2 #this part will become a variable
-        preference="histroy" #this part will become a variable
+        preference="history" #this part will become a variable
 
         
         # initialize
         value=40
         iter=0
         max_iter=20
+        pref_count = 0
+        pref_iter = 0
         count=[100 for _ in range(duration)]
 
         while any(element > value for element in count)==True:
@@ -233,9 +234,9 @@ def questionnaire():
                     df = pd.DataFrame([item.split('Address: ') for item in itinerary], columns=['Description', 'destination'])
 
                     if  ('AM: '  in itinerary[0]) or ('PM: ' in itinerary[0]):
-                        df[['Time','Description']] = df['Description'].str.split(': ', 1, expand=True)
+                        df[['Time','Description']] = df['Description'].str.split(': ', expand=True)
                     elif ('AM-'  in itinerary[0]) or ('PM-' in itinerary[0]):
-                        df[['Time','Description']] = df['Description'].str.split('- ', 1, expand=True)
+                        df[['Time','Description']] = df['Description'].str.split('- ', expand=True)
 
                     if '-' in df['Time'][0]:
                         df['Time'] = df['Time'].str.replace('- ', '') 
@@ -245,10 +246,10 @@ def questionnaire():
                     df['Time'] = df['Time'].apply(lambda x: x if ' AM' in x else x.replace('AM', ' AM'))
 
 
-                    df[['destination','Latitude']] = df['destination'].str.split('Latitude: ', 1, expand=True)
+                    df[['destination','Latitude']] = df['destination'].str.split('Latitude: ', expand=True)
                     df['destination'] = df['destination'].str.replace('(', '')
                     df['Latitude'] = df['Latitude'].str.replace('(', '')
-                    df[['Latitude','Longitude']] = df['Latitude'].str.split('Longitude: ', 1, expand=True)
+                    df[['Latitude','Longitude']] = df['Latitude'].str.split('Longitude: ', expand=True)
                     df['Longitude'] = df['Longitude'].str.replace(')', '')
 
                     # Reorder the columns
@@ -292,7 +293,7 @@ def questionnaire():
 
 
                 ##Identify food related suggestion
-                df['has_meal'] = df['Description'].str.contains('lunch|breakfast|dinner', case=False, na=False).astype(int)
+                df['has_meal'] = df['Description'].str.contains('lunch|breakfast|dinner', case=False).astype(int) ####removed na=false
 
 
                 #Destination set

@@ -15,22 +15,6 @@
             <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
         </p>
-
-        <p>
-            {{ form.start.label }}<br>
-            {{ form.start(size=32) }}<br>
-            {% for error in form.start.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-
-        <p>
-            {{ form.end.label }}<br>
-            {{ form.end(size=32) }}<br>
-            {% for error in form.end.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
         
         <p>{{ form.submit() }}</p>
     </form>
