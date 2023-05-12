@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=D:\ashoka university\Sem 2\computer tech\Copy travel_itinerary Aditi\venv
+set VIRTUAL_ENV=C:\Users\gbyat\travel_ite\venv
 
 if not defined PROMPT set PROMPT=$P$G
 

@@ -43,8 +43,8 @@ def questionnaire():
     if form.validate_on_submit():
         session['Name'] = form.name.data
         session['Destination'] = form.destination.data
-        #session['Start Date'] = form.start.data
-        #session['End Date'] = form.end.data
+        session['Start Date'] = form.start.data
+        session['End Date'] = form.end.data
         # session['duration'] = datetime.strptime(session['End Date'], "%Y/%m/%d") - datetime.strptime(session['Start Date'], "%Y/%m/%d")
         # flash("Planning trip to {}" .format(session['Destination']))
         
