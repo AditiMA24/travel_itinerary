@@ -2,6 +2,30 @@
 
 
 {% block content %}
-    <h1>TEST! We are processing your request</h1>
+<head>
+    <title>Output Page</title>
+</head>
+<body>
+    <h1>Dataframe Output</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Description</th>
+                <th>Address</th>
+                <!-- Add more column headers as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for index, row in itinerary.iterrows() %}
+                <tr>
+                    <td>{{ rows['time_new'] }}</td>
+                    <td>{{ rows['Description'] }}</td>
+                    <td>{{ rows['destination'] }}</td>
+                    <!-- Add more columns as needed -->
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
 {% endblock %}
