@@ -1,0 +1,7 @@
+Flask
+Flask-WTF
+pandas
+spacy
+flask-bootstrap
+folium
+IPython
