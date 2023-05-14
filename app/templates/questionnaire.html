@@ -1,55 +1,12 @@
 {% extends "base.html" %}
-
+{% import 'bootstrap/wtf.html' as wtf %}
 {% block content %}
-    <h1>TellUs</h1>
-    <form action="" method="post" novalidate>
-        {{ form.hidden_tag() }}
-        <p>
-            {{ form.name.label }}<br>
-            {{ form.name(size=32) }}<br>
-        </p>
-        <p>
-            {{ form.destination.label }}<br>
-            {{ form.destination(size=32) }}<br>
-            {% for error in form.destination.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>   
-
-        <p>
-            {{ form.start.label }}<br>
-            {{ form.start(size=32) }}<br>
-            {% for error in form.start.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-
-        <p>
-            {{ form.end.label }}<br>
-            {{ form.end(size=32) }}<br>
-            {% for error in form.end.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-
-         <p>
-            {{ form.duration.label }}<br>
-            {{ form.duration(size=32) }}<br>
-            {% for error in form.duration.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-
-        <p>
-            {{ form.preference1.label }}<br>
-            {{ form.preference1(size=32) }}<br>
-        </p>
-
-        <p>
-            {{ form.preference2.label }}<br>
-            {{ form.preference2(size=32) }}<br>
-        </p>
-        
-        <p>{{ form.submit() }}</p>
-    </form>
+<style>h1 {text-align: center;}</style>
+<h1>Tell us about your trip</h1>
+    <div class="row">
+        <div class="col-md-4 col-md-offset-4">
+            {{ wtf.quick_form(form) }}
+            <!-- <a href="\preference">Next</a> -->
+        </div>
+    </div>
 {% endblock %}
