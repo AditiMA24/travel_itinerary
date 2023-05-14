@@ -8,6 +8,8 @@ from app.forms import LoginForm
 #pip install folium
 # pip install IPython
 # pip install flask-bootstrap
+# pip install spacy
+# python -m spacy download en_core_web
 import pandas as pd
 import requests
 import time
