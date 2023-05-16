@@ -26,7 +26,7 @@ from IPython.display import display
 import re
 
 ##KEYS
-openai.api_key = "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"
+openai.api_key = ""
 openai.Model.list();
 dist_key="4Bp1aAWodp70uc0QA2vgC6BScbVdk"
 
@@ -425,7 +425,7 @@ def questionnaire():
 
                 unique_days = df['day'].unique()
 
-                dfs_by_day = {}
+                dfs_by_day = {} 
 
                 # Iterate over the unique days
                 for day in unique_days:
