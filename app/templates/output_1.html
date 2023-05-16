@@ -1,8 +1,15 @@
-{% extends "base.html" %}
-
-
-{% block content %}
-
-    <h1>here is your itinerary!</h1>
-<!--  -->
-{% endblock %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generated Itinerary</title>
+    <!-- Include any CSS or JavaScript files here -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="table-responsive">
+            {{ html_result|safe }}
+        </div>
+    </div>
+</body>
+</html>

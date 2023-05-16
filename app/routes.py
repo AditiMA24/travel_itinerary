@@ -1,15 +1,16 @@
 from flask import render_template, request, flash, redirect, url_for, session
 from app import app
 from app.forms import LoginForm
-# from requests import requests
+
 
 # ##Imports to generate itinerary
+
+# Run these in the terminal
 # pip install openai
-#pip install folium
-# pip install IPython
-# pip install flask-bootstrap
-# pip install spacy
 # python -m spacy download en_core_web
+# pip install -r requirements.txt
+
+#other imports
 import pandas as pd
 import requests
 import time
@@ -25,9 +26,9 @@ from IPython.display import display
 import re
 
 ##KEYS
-openai.api_key = ""
+openai.api_key = "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"
 openai.Model.list();
-dist_key="ScsWl6XfkOpZd2KHCATUMQpsHcNtX"
+dist_key="4Bp1aAWodp70uc0QA2vgC6BScbVdk"
 
 
 
@@ -38,14 +39,10 @@ def index():
     return render_template('index.html', title='Home') #,user=user
 
 
-
-
-
-
 #####Defining some useful functions that will be used
+
 ### NLP Function
-# pip istall spacy
-# pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.0.0/en_core_web_sm-3.0.0.tar.gz
+###Define set of relevant key words corresponding preference
 adventurous_trip_words = ["Exploration", "Adventure", "Trekking", "Hiking", "Mountaineering",
 "Climbing", "Rafting", "Canyoning", "Skydiving", "Bungee jumping",
 "Paragliding", "Zip-lining", "Safari", "Wildlife", "Camping",
@@ -121,7 +118,7 @@ art_trip_words = ["Art", "Culture", "Contemporary", "Exhibition", "Gallery", "Mu
 nlp = spacy.load("en_core_web_sm")
 
 
-# Define the broad categories and their respective keyword lists
+# Define a dictionary with the broad categories and their respective keyword lists
 categories = {
     'adventure': adventurous_trip_words,
     'nature': nature_trip_words,
@@ -130,14 +127,14 @@ categories = {
     'art': art_trip_words
 }
 
-# Initialize category scores
+# Initialize category scores by setting it to zero
 category_scores = {category: 0 for category in categories}
 
 # Function to categorize a paragraph into categories
 def categorize_paragraph(paragraph, categories):
     doc = nlp(paragraph)
     
-    # Calculate the category scores based on keywords or patterns
+    # Calculate the category scores based on occurance of keyords in the sentence
     for token in doc:
         for category, keywords in categories.items():
             if token.text.lower() in [keyword.lower() for keyword in keywords]:
@@ -150,10 +147,10 @@ def categorize_paragraph(paragraph, categories):
     return predicted_categories
 
 
-
+#Function to check if the preference is as reuested by user
 def preference_check(category,preference):
-  words =preference.replace(",", "").split()
-  return any(element in words for element in category)
+  words =preference.replace(",", "").split() #convert preference from form to a list
+  return any(element in words for element in category) #check if the predicted category is as requested by user
 
 
 
@@ -162,20 +159,15 @@ def preference_check(category,preference):
 
 @app.route('/output_0')
 def output_0():
-    return render_template('output_0.html', title='test_Output') #,user=user            
+    return render_template('output_0.html', title='test_Output') 
     
-
-
-        
 
 @app.route('/questionnaire', methods=['GET', 'POST'])
 def questionnaire():
     form = LoginForm()
-    # destination = request.form['destination']
-    # # Render the results template with the generated itinerary
     if request.method == 'POST':
         if form.validate_on_submit():
-            session['Name'] = form.name.data
+            #saving reuired infromation from form in a local database
             session['Destination'] = form.destination.data
             session['Duration'] = form.duration.data
             session['Preference1'] = form.preference1.data
@@ -184,7 +176,9 @@ def questionnaire():
             
             place= format(session['Destination'])
             duration=int((session['Duration'])) 
-            preference=format(session['Preference1'])
+            preference1=format(session['Preference1'])
+            preference2= format( session['Preference2'])
+            preference = f"{preference1}, {preference2}"
 
             try:
 
@@ -198,9 +192,9 @@ def questionnaire():
 
                 while any(element > value for element in count)==True:
                     if iter<max_iter: 
-                    
                         # #Preference Loop starts here
                         while pref_count<70 and pref_iter<max_iter: 
+                            #Step 1: Query ChatGPT
                             response = openai.ChatCompletion.create(
                             model="gpt-3.5-turbo",
                             messages=[
@@ -236,9 +230,11 @@ def questionnaire():
                                 elif ('PM:' in my_list[i]) or ('PM -' in my_list[i]):
                                     itinerary=itinerary+[my_list[i]]
 
-                            # #create a data frame
+                            #create a data frame
                             df = pd.DataFrame([item.split('Address: ') for item in itinerary], columns=['Description', 'destination'])
 
+                            #Split sentence by following patterns to multiple variables
+                            ##extract time
                             if  ('AM: '  in itinerary[0]) or ('PM: ' in itinerary[0]):
                                 df[['Time','Description']] = df['Description'].str.split(': ', expand=True)
                             elif ('AM-'  in itinerary[0]) or ('PM-' in itinerary[0]):
@@ -251,7 +247,7 @@ def questionnaire():
                             df['Time'] = df['Time'].apply(lambda x: x if ' PM' in x else x.replace('PM', ' PM'))
                             df['Time'] = df['Time'].apply(lambda x: x if ' AM' in x else x.replace('AM', ' AM'))
 
-
+                            #extract other information
                             df[['destination','Latitude']] = df['destination'].str.split('Latitude: ', expand=True)
                             df['destination'] = df['destination'].str.replace('(', '')
                             df['Latitude'] = df['Latitude'].str.replace('(', '')
@@ -275,7 +271,7 @@ def questionnaire():
                         df['duration_GPT']=''
                         for i in range(len(df['Time'])):
                             if i+1<len(df['Time']):
-                                time1=datetime.strptime(df['Time'][i], "%I:%M %p")
+                                time1=datetime.strptime(df['Time'][i], "%I:%M %p") #convert the string into time format
                                 time2=datetime.strptime(df['Time'][i+1], "%I:%M %p")
                                 df['duration_GPT'][i]= (time2-time1).total_seconds()/3600 #time in hours
 
@@ -284,10 +280,10 @@ def questionnaire():
                             if i+1<len(df['Time']):
                                 time1=datetime.strptime(df['Time'][i], "%I:%M %p")
                                 time2=datetime.strptime(df['Time'][i+1], "%I:%M %p")
-                                df['duration_GPT'][i]= ((time2-time1)).total_seconds()/3600 #time in hours //time diff in absolute value
+                                df['duration_GPT'][i]= ((time2-time1)).total_seconds()/3600 #time in hours 
                         df['duration_GPT'][len(df['Time'])-1]=0 #last destination in the list
 
-                        ##segregate days
+                        ##segregate days when the time difference turns negative
                         df['day']=1
                         for i in range(1,len(df['Time'])):
                             if df['duration_GPT'][i]>0 :
@@ -297,17 +293,15 @@ def questionnaire():
 
                         df['duration_GPT']= abs(df['duration_GPT']) #time diff in absolute value 
 
-
-                        ##Identify food related suggestion
+                        ##Identify meal related suggestion
                         df['has_meal'] = df['Description'].str.contains('lunch|breakfast|dinner', case=False, na=False).astype(int)
-
 
                         #Destination set
                         df['destination_set']=''
                         destination_set=list(df['destination'])
                         for i in range(len(df['destination'])):
                             df['destination_set'][i]=destination_set
-
+                        destination_set_temp=set(destination_set)      
 
                         ### Obtain the distance and time between the first and the following place
                         def distance_API(origin_point, destination_point):
@@ -347,18 +341,20 @@ def questionnaire():
                         def time_to_decimal(time_str):
                             if time_str== 'None':
                                 return None
-                            parts = time_str.split()
+                            parts = time_str.split() 
                             hours, mins = 0, 0
                             for i, part in enumerate(parts):
+                                # If the current part is a digit and there is another part after it
                                 if part.isdigit() and i < len(parts) - 1:
-                                    if parts[i + 1].startswith('hour'):
+                                    if parts[i + 1].startswith('hour'): # If the next part starts with 'hour' save as hours
                                         hours = int(part)
-                                    elif parts[i + 1].startswith('min'):
+                                    elif parts[i + 1].startswith('min'): #If the next part starts with 'min' save as mins
                                         mins = int(part)
                                     else:
                                         return None
                             return round(hours + mins / 60, 3)
 
+                        #Apply the function
                         time = [time_to_decimal(t) for t in time_result_set]
 
                         time.append(0) #accounting for no next time at the ending point
@@ -384,7 +380,7 @@ def questionnaire():
 
                 
                 
-                ###Maximum travel time 6 hours for a day based on this allot time slot to every activity and drop what exceeds the day trip limit:
+                ###Maximum travel time 5 hours for a day based on this allot time slot to every activity and drop what exceeds the day trip limit:
                 df['cumulative_sum'] = df.groupby('day')['time_to_next_GPT'].transform(pd.Series.cumsum)
 
                 threshold =  5 #maximum travel time set to 5 hours
@@ -404,7 +400,7 @@ def questionnaire():
                 # Group the DataFrame by the 'day' column
                 groups = df.groupby('day')
 
-                # Iterate over each group
+                #Update time based on travel time + a buffer of 2hours (1 hour buffer if meal stop)
                 for day, group in groups:
                     for i in range(1, len(group['Time'])):
                         if group['has_meal'].iloc[i] == 0:
@@ -435,12 +431,12 @@ def questionnaire():
                 for day in unique_days:
                     # Create a DataFrame for the current day using boolean indexing
                     df_day = df[df['day'] == day].copy()
-
-                    # Store the DataFrame in the dictionary with the day as the key
                     dfs_by_day[day] = df_day
 
 
+                ### If a day has less than 2 suggestions, then generate additional reuslts and print it as note below table
                 # Iterate over each day and its corresponding DataFrame
+                add=[]
                 for day, df_day in dfs_by_day.items():
                     # Calculate the sum of 'within_time_limit' for the current day
                     sum_within_time_limit = df_day['within_time_limit'].sum()
@@ -467,16 +463,23 @@ def questionnaire():
                     )
 
                         result = response.choices[0].text.strip()
-                        add= f"To make the most of day {day} of your trip, {result} are some offbeat tourist destinations that should not be missed when visiting {first_destination}."
+                        print(result)
+                        add += [f"If you wish to visit more places on day {day} of your trip, {result} are some offbeat tourist destinations that should not be missed."]
+                        print(add)
+                add_text = ' '.join(add) #convert list to string
+
+                # Add text below the table if required
+                text = f"<p>{add_text}</p>"
 
                 #Save Results for Mapping: destinantions to plot for itinerary purpose
                 itinerary=df[df['within_time_limit']==True]
                 suggestion=df[df['within_time_limit']==False]
                 itinerary_destination_set=list(itinerary['destination'])
                 suggestion_destination_set=list(suggestion['destination'])
-            #     return f"{df['destination'][0]}"
+                itinerary = itinerary.rename(columns={'Time': 'Time_original','time_new': 'Time', 'day': 'Day'})
+                
             
-                ####CREATE map html
+                ##Step 3: CREATE map html
                 # Create a map centered on India
                 india_map = folium.Map(location=[20.5937, 78.9629], zoom_start=5)
 
@@ -541,43 +544,21 @@ def questionnaire():
 
                 # Save the map as an HTML file
                 india_map.save('my_map.html')
-                map_html = india_map._repr_html_()
-
-                # # Display the map in Colab
-                # display(india_map)
-                 
+                map_html = india_map._repr_html_() #save map in string format
 
 
-
-                desired_columns = ['day','time_new', 'Description', 'destination']
+                #Step 4: Convert dataframe to html
+                desired_columns = ['Day','Time', 'Description'] #extract desired columns
                 
-                # Generate the HTML output
-                html_output = '<table>'
-                html_output += '<tr><th>' + '</th><th>'.join(desired_columns) + '</th></tr>'
-                
-                for _, row in itinerary.iterrows():
-                    html_output += '<tr>'
-                    html_output += '<td>' + '</td><td>'.join(str(row[col]) for col in desired_columns) + '</td>'
-                    html_output += '</tr>'
-                
-                html_output += '</table>'
-
-                # Add text below the table
-                text = f"<p>{add}</p>"
-
-                # Concatenate the table HTML and the text
-                html_result = html_output + text + map_html
-                return  html_result  
+                html_output = itinerary[desired_columns].to_html(classes='table table-bordered', index=False)
+                html_output = html_output.replace('<table', '<table style="background-color: rgb(130, 201, 207)"') 
+                html_result = html_output + text + map_html #add_suggestion +
+                return render_template('output_1.html', html_result=html_result)
             
             except :
-            # If there was an error in processing
-                flash('There was an error in processing. Please try again.')
+            # If there was an error in processing, then save the filled details and user should re-submit
                 return render_template('questionnaire.html', title='TellUs', form=form)
-        
 
-    # Return an appropriate response or redirect to an error page
-
-    #return f"{df[destination][0]}"
     return render_template('questionnaire.html',  title='TellUs', form=form)
 
 if __name__ == '__main__':
