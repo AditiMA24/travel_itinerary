@@ -3,6 +3,7 @@ from app import app
 from app.forms import LoginForm
 
 
+
 # ##Imports to generate itinerary
 
 # Run these in the terminal
@@ -26,7 +27,7 @@ from IPython.display import display
 import re
 
 ##KEYS
-openai.api_key = ""
+openai.api_key = "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"
 openai.Model.list();
 dist_key="4Bp1aAWodp70uc0QA2vgC6BScbVdk"
 
@@ -418,36 +419,33 @@ def questionnaire():
                             add = 1.5 + group['time_to_next_GPT'].iloc[i-1]
 
                         hours_to_add = int(add)
-                        minutes_to_add = int(hours_to_add * 60)
+                        minutes_decimal = add % 1
+                        minutes_to_add = int(minutes_decimal * 60)
+                        # minutes_to_add = int(hours_to_add * 60)
                         duration = pd.Timedelta(hours=hours_to_add, minutes=minutes_to_add)
                         new_datetime = pd.Timestamp.combine(pd.to_datetime('today'), original_time) + duration
                         new_time = new_datetime.time()
                         
                         # Update the 'time_new' column of the current group
                         group['time_new'].iloc[i] = new_time
+                
                         # Update the corresponding rows in the original DataFrame
-                        group.at[group.index[i], 'time_new'] = new_time
                         df.at[group.index[i], 'time_new'] = new_time
-                        #df.loc[group.index[i], 'time_new'] =new_time
-                        #df.loc[group.index[i], 'time_new'] = new_time
                 
                 #Set an upper bound on the visiting hours
-                target_time = datetime.time(22, 0)
-                def visiting_time_limit(input_time):
-                    if input_time<target_time:
-                        return True
-                    else: 
-                        return False
-
-                #Apply the function
-                df['within_visiting_time_limit']=df['time_new'].apply(lambda x: visiting_time_limit(x) )
+                def check_time(time_str):
+                    target_time = pd.to_datetime('22:00:00', format='%H:%M:%S').time()
+                    time = pd.to_datetime(time_str, format='%H:%M:%S').time()
+                    return time < target_time
                 
+                # Apply the function 
+                df['within_visiting_time_limit'] = df['time_new'].apply(check_time)
+                # df['within_visiting_time_limit']=df['time_new'].apply(lambda x: visiting_time_limit(x) )
+                print("reached here")
                 df = df.rename(columns={'within_time_limit': 'within_cum_time_limit'})
                 
                 #Create a new column 'within_time_limit' which is true if both the visiting and cumulative travel time var condition is true and false otherwise
                 df['within_time_limit'] = df['within_visiting_time_limit'] & df['within_cum_time_limit']
-                     
-
 
                 unique_days = df['day'].unique()
 
@@ -491,7 +489,7 @@ def questionnaire():
                         result2 = response.choices[0].text.strip()
                         print(result2)
                         add += [f"If you wish to visit more places on day {day} of your trip, {result} are some offbeat tourist destinations that should not be missed."]
-                        print(add)
+                        # print(add)
                 add_text = ' '.join(add) #convert list to string
 
                 # Add text below the table if required
