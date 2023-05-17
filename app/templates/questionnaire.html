@@ -8,14 +8,14 @@
         background-repeat: no-repeat;
         background-attachment: fixed;
         background-size: cover;
-        background-color: rgba(166, 198, 201, 0.5); /* Adjust the alpha value (0.5) as desired */
+        background-color: rgba(166, 198, 201, 0.5); 
     }
     
     .form-container {
         background-color: #000000;
         border-radius: 10px;
         padding: 20px;
-        margin: 50px auto;
+        margin: 0 auto;
         max-width: 500px;
         text-align: center;
         display: flex;
@@ -33,8 +33,8 @@
     .btn-submit {
         background-color: #ffffff;
         color: #000000;
-        padding-left: 140px;
-        padding-right: 140px;
+        /* padding-left: 140px;
+        padding-right: 140px; */
         width: 100%;
         opacity: 1;
         align-items: center;
@@ -43,6 +43,8 @@
     .form-line {
         border-bottom: 2px solid rgba(0, 0, 0, 0.1);
         margin-bottom: 10px;
+        width: 100%;
+        
     }
 
     .footnote {
@@ -52,16 +54,19 @@
         color: #808080;
     }
 </style>
-<div class="row justify-content-center">
-    <div class="col-md-4 col-md-offset-4">
-        <div class="form-container">
-            <h1>Generate Your Itinerary</h1>
-            <div class="form-line"></div>
-            {{ wtf.quick_form(form, form_type="horizontal", button_map={"submit": "btn btn-submit"}) }}
-            <p class="footnote">Kindly resubmit the form in case you don't see any result. If the issue persists email us at sample@gmail.com.</p>
-            <p class="footnote">Note: Fields marked with an asterisk (*) are mandatory.</p>
+<div class="container">
+    <div class="row justify-content-center align-items-center">
+        <div class="col-md-4 col-md-offset-4">
+            <div class="form-container">
+                <h1>Generate Your Itinerary</h1>
+                <div class="form-line"></div>
+                {{ wtf.quick_form(form, form_type="horizontal", button_map={"submit": "btn btn-submit"}) }}
+                <p class="footnote">Kindly resubmit the form in case you don't see any result. If the issue persists email us at sample@gmail.com.</p>
+                <p class="footnote">Note: Fields marked with an asterisk (*) are mandatory.</p>
+            </div>
         </div>
     </div>
 </div>
+
 
 {% endblock %}

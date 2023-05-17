@@ -22,7 +22,7 @@ from IPython.display import display
 import re
 
 ##KEYS
-openai.api_key = "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"
+openai.api_key = ""
 openai.Model.list();
 dist_key="4Bp1aAWodp70uc0QA2vgC6BScbVdk"
 
