@@ -1,15 +1,10 @@
-from flask import render_template, request, flash, redirect, url_for, session
+from flask import render_template, request, flash, redirect, url_for, session , Response
 from app import app
 from app.forms import LoginForm
 
 
 
 # ##Imports to generate itinerary
-
-# Run these in the terminal
-# pip install openai
-# python -m spacy download en_core_web
-# pip install -r requirements.txt
 
 #other imports
 import pandas as pd
@@ -27,7 +22,7 @@ from IPython.display import display
 import re
 
 ##KEYS
-openai.api_key = ""
+openai.api_key = "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"
 openai.Model.list();
 dist_key="4Bp1aAWodp70uc0QA2vgC6BScbVdk"
 
@@ -155,14 +150,7 @@ def preference_check(category,preference):
 
 
 
-
-
-
-@app.route('/output_0')
-def output_0():
-    return render_template('output_0.html', title='test_Output') 
-    
-
+#To generate itinerary
 @app.route('/questionnaire', methods=['GET', 'POST'])
 def questionnaire():
     form = LoginForm()
@@ -174,13 +162,18 @@ def questionnaire():
             session['Preference1'] = form.preference1.data
             session['Preference2'] = form.preference2.data
 
-            
+            #saving some global values to use in other routes
+            global itinerary
+            global place
+            global duration
+
             place= format(session['Destination'])
             duration=int((session['Duration'])) 
             preference1=format(session['Preference1'])
             preference2= format( session['Preference2'])
             preference = f"{preference1}, {preference2}"
 
+            
             try:
 
                 # initialize
@@ -420,8 +413,7 @@ def questionnaire():
 
                         hours_to_add = int(add)
                         minutes_decimal = add % 1
-                        minutes_to_add = int(minutes_decimal * 60)
-                        # minutes_to_add = int(hours_to_add * 60)
+                        minutes_to_add = int(minutes_decimal * 60) ##adds unrounded minutes 
                         duration = pd.Timedelta(hours=hours_to_add, minutes=minutes_to_add)
                         new_datetime = pd.Timestamp.combine(pd.to_datetime('today'), original_time) + duration
                         new_time = new_datetime.time()
@@ -432,7 +424,7 @@ def questionnaire():
                         # Update the corresponding rows in the original DataFrame
                         df.at[group.index[i], 'time_new'] = new_time
                 
-                #Set an upper bound on the visiting hours
+                #Set an upper bound on the visiting hours as 10 pm. Anything beyond this time should be removed
                 def check_time(time_str):
                     target_time = pd.to_datetime('22:00:00', format='%H:%M:%S').time()
                     time = pd.to_datetime(time_str, format='%H:%M:%S').time()
@@ -445,6 +437,8 @@ def questionnaire():
                 #Create a new column 'within_time_limit' which is true if both the visiting and cumulative travel time var condition is true and false otherwise
                 df['within_time_limit'] = df['within_visiting_time_limit'] & df['within_cum_time_limit']
 
+
+                ### If a day has less than 2 suggestions, then generate additional reuslts and print it as note below table
                 unique_days = df['day'].unique()
 
                 dfs_by_day = {} 
@@ -455,8 +449,6 @@ def questionnaire():
                     df_day = df[df['day'] == day].copy()
                     dfs_by_day[day] = df_day
 
-
-                ### If a day has less than 2 suggestions, then generate additional reuslts and print it as note below table
                 # Iterate over each day and its corresponding DataFrame
                 add=[]
                 for day, df_day in dfs_by_day.items():
@@ -487,7 +479,6 @@ def questionnaire():
                         result2 = response.choices[0].text.strip()
                         print(result2)
                         add += [f"If you wish to visit more places on day {day} of your trip, {result} are some offbeat tourist destinations that should not be missed."]
-                        # print(add)
                 add_text = ' '.join(add) #convert list to string
 
                 # Add text below the table if required
@@ -501,7 +492,7 @@ def questionnaire():
                 itinerary = itinerary.rename(columns={'Time': 'Time_original','time_new': 'Time', 'day': 'Day'})
 
 
-                # Function to round time to nearest 30 minutes or whole hour
+                # Function to round time to nearest 30 minutes or whole hour (do not want to show 11:43:00. Instead show 12:00:00)
                 def round_to_nearest_time(time_str):
                     time = pd.to_datetime(time_str, format='%H:%M:%S').time()
                     minute = time.minute
@@ -596,6 +587,48 @@ def questionnaire():
                 return render_template('questionnaire.html', title='TellUs', form=form)
 
     return render_template('questionnaire.html',  title='TellUs', form=form)
+
+
+#To download
+@app.route('/download')
+def download_output():
+    global itinerary
+
+    desired_columns = ['Day', 'Time', 'Description']  # extract desired columns
+    html_output = itinerary[desired_columns].to_html(index=False)
+    html_output = html_output.replace('<table', '<table class="table table-bordered table-striped"')
+    ##use bootstrap and format the page to download
+    html_output = '''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Generated Itinerary </title>
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+            <style>
+                th {{
+                    text-align: left;
+                    background-color: #306e85;
+                    color: #ffffff;
+                    padding: 10px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                {html_output}
+            </div>
+        </body>
+        </html>
+    '''.format(html_output=html_output)
+
+    # Set response headers for file download
+    headers = {
+        'Content-Disposition': 'attachment; filename=output_1.html',
+        'Content-Type': 'text/html'
+    }
+
+    return Response(html_output, headers=headers)
+
 
 if __name__ == '__main__':
     app.run()

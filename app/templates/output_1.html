@@ -2,7 +2,6 @@
 <html>
 <head>
     <title>Generated Itinerary</title>
-    <!-- Include any CSS or JavaScript files here -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <style>
         th {
@@ -19,5 +18,10 @@
             {{ html_result|safe }}
         </div>
     </div>
+
+    <div class="text-center download-button">
+        <a href="{{ url_for('download_output') }}" class="btn btn-primary">Download Itinerary</a>
+    </div>
 </body>
+
 </html>
