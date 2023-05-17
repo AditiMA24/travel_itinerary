@@ -27,7 +27,7 @@ from IPython.display import display
 import re
 
 ##KEYS
-openai.api_key = "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"
+openai.api_key = ""
 openai.Model.list();
 dist_key="4Bp1aAWodp70uc0QA2vgC6BScbVdk"
 
@@ -440,8 +440,6 @@ def questionnaire():
                 
                 # Apply the function 
                 df['within_visiting_time_limit'] = df['time_new'].apply(check_time)
-                # df['within_visiting_time_limit']=df['time_new'].apply(lambda x: visiting_time_limit(x) )
-                print("reached here")
                 df = df.rename(columns={'within_time_limit': 'within_cum_time_limit'})
                 
                 #Create a new column 'within_time_limit' which is true if both the visiting and cumulative travel time var condition is true and false otherwise
@@ -501,8 +499,22 @@ def questionnaire():
                 itinerary_destination_set=list(itinerary['destination'])
                 suggestion_destination_set=list(suggestion['destination'])
                 itinerary = itinerary.rename(columns={'Time': 'Time_original','time_new': 'Time', 'day': 'Day'})
-                
-            
+
+
+                # Function to round time to nearest 30 minutes or whole hour
+                def round_to_nearest_time(time_str):
+                    time = pd.to_datetime(time_str, format='%H:%M:%S').time()
+                    minute = time.minute
+                    if minute < 30:
+                        time = time.replace(minute=0)
+                    else:
+                        time = time.replace(minute=30)
+                    return time
+
+                # Apply the rounding function to the Time column
+                itinerary['Time'] = itinerary['Time'].apply(round_to_nearest_time)
+
+
                 ##Step 3: CREATE map html
                 # Create a map centered on India
                 india_map = folium.Map(location=[20.5937, 78.9629], zoom_start=5)
@@ -576,8 +588,7 @@ def questionnaire():
                 
                 html_output = itinerary[desired_columns].to_html(classes='table table-bordered', index=False)
                 html_output = html_output.replace('<table', '<table style="background-color: rgb(130, 201, 207)"') 
-                html_result = html_output + text + map_html #add_suggestion +
-                #print(result)
+                html_result = html_output + text + map_html 
                 return render_template('output_1.html', html_result=html_result)
             
             except :
