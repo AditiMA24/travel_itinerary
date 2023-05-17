@@ -4,32 +4,42 @@
 {% block content %}
 <style>
     body {
-        background-color: rgb(130, 201, 207);
+        background-image: url('https://voyanture.com/wp-content/uploads/2019/01/Wayanad.jpg');
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-size: cover;
+        background-color: rgba(166, 198, 201, 0.5); /* Adjust the alpha value (0.5) as desired */
     }
-
+    
     .form-container {
-        background-color: #ffffff;
+        background-color: #000000;
         border-radius: 10px;
         padding: 20px;
         margin: 50px auto;
         max-width: 500px;
         text-align: center;
-
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        opacity: 0.8;
     }
     
     h1 {
         text-align: center;
+        color: #ffffff;
+        opacity: 100%;
     }
 
-
-    
     .btn-submit {
-        background-color: black; 
-        color: white; 
+        background-color: #ffffff;
+        color: #000000;
         padding-left: 140px;
         padding-right: 140px;
         width: 100%;
+        opacity: 1;
+        align-items: center;
     }
+    
     .form-line {
         border-bottom: 2px solid rgba(0, 0, 0, 0.1);
         margin-bottom: 10px;
@@ -41,18 +51,17 @@
         text-align: center;
         color: #808080;
     }
-
 </style>
-<div class="d-flex justify-content-center">
+<div class="row justify-content-center">
     <div class="col-md-4 col-md-offset-4">
         <div class="form-container">
             <h1>Generate Your Itinerary</h1>
             <div class="form-line"></div>
             {{ wtf.quick_form(form, form_type="horizontal", button_map={"submit": "btn btn-submit"}) }}
-            <p class="footnote">Kindly resubmit the form in case you don't see any result. If the issue persists email us.</p>
+            <p class="footnote">Kindly resubmit the form in case you don't see any result. If the issue persists email us at sample@gmail.com.</p>
             <p class="footnote">Note: Fields marked with an asterisk (*) are mandatory.</p>
         </div>
     </div>
 </div>
 
-{% endblock %}
+{% endblock %}

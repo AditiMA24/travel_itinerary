@@ -1,10 +1,61 @@
-{% extends 'bootstrap/base.html' %}
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
 
 {% block content %}
-    <div>
-        <a href="\index">Home</a>
-        <a href="\questionnaire">TellUs</a>
+<style>
+    body {
+        background-image: url('https://voyanture.com/wp-content/uploads/2019/01/kumarakom-backwaters.jpg');
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-size: cover;
+        background-color: rgba(166, 198, 201, 0.5); /* Adjust the alpha value (0.5) as desired */
+    }
+
+    .content-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .text-container {
+        background-color: rgb(0, 0, 0);
+        padding: 20px;
+        text-align: center;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 500px;
+        height: 100%;
+        max-height: 500px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: #ffff;
+        opacity: 0.70;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+    
+    .btn-get-started {
+        background-color: white;
+        color: black;
+        transition: background-color 0.3s ease;
+    }
+    
+    .btn-get-started:hover {
+        background-color: #dddddd;
+    }
+</style>
+<div class="content-container">
+    <div class="container-fluid">
+        <div class="text-container">
+            <h1 class="display-4 text-light text-center">Welcome to Travel Itinerary Generator</h1>
+            <p class="lead text-light text-center">Tell us where you want to go and we will generate a complete itinerary!</p>
+            <a href="{{ url_for('questionnaire') }}" class="btn btn-get-started btn-lg">Get Started</a>
+        </div>
     </div>
-    <h1>Welcome to Travel Itinerary Generator</h1>
-    <div><p>Tell use where you want to go and we will generate a complete itinerary!</b></p></div>
-{% endblock %}
+</div>
+{% endblock %}

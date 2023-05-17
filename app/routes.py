@@ -254,6 +254,7 @@ def questionnaire():
                             df[['Latitude','Longitude']] = df['Latitude'].str.split('Longitude: ', expand=True)
                             df['Longitude'] = df['Longitude'].str.replace(')', '')
 
+
                             # Reorder the columns
                             desired_order = ['Time', 'Description', 'destination', 'Latitude','Longitude']
                             df = df.reindex(columns=desired_order)
@@ -295,6 +296,9 @@ def questionnaire():
 
                         ##Identify meal related suggestion
                         df['has_meal'] = df['Description'].str.contains('lunch|breakfast|dinner', case=False, na=False).astype(int)
+
+                        ##Identify trek related suggestion
+                        df['has_trek'] = df['Description'].str.contains('trek|trekking|hiking|hike', case=False, na=False).astype(int)
 
                         #Destination set
                         df['destination_set']=''
@@ -403,13 +407,16 @@ def questionnaire():
                 #Update time based on travel time + a buffer of 2hours (1 hour buffer if meal stop)
                 for day, group in groups:
                     for i in range(1, len(group['Time'])):
-                        if group['has_meal'].iloc[i] == 0:
+                        if group['has_meal'].iloc[i] == 1:
+                            original_time = pd.to_datetime(str(group['time_new'].iloc[i])).time()
+                            add = 0.75 + group['time_to_next_GPT'].iloc[i-1]
+                        elif group['has_trek'].iloc[i] == 1:
                             original_time = pd.to_datetime(str(group['time_new'].iloc[i])).time()
                             add = 2 + group['time_to_next_GPT'].iloc[i-1]
                         else:
                             original_time = pd.to_datetime(str(group['time_new'].iloc[i])).time()
-                            add = 1 + group['time_to_next_GPT'].iloc[i-1]
-                            
+                            add = 1.5 + group['time_to_next_GPT'].iloc[i-1]
+
                         hours_to_add = int(add)
                         minutes_to_add = int(hours_to_add * 60)
                         duration = pd.Timedelta(hours=hours_to_add, minutes=minutes_to_add)
@@ -418,9 +425,28 @@ def questionnaire():
                         
                         # Update the 'time_new' column of the current group
                         group['time_new'].iloc[i] = new_time
-                        
                         # Update the corresponding rows in the original DataFrame
-                        df.loc[group.index] = group    
+                        group.at[group.index[i], 'time_new'] = new_time
+                        df.at[group.index[i], 'time_new'] = new_time
+                        #df.loc[group.index[i], 'time_new'] =new_time
+                        #df.loc[group.index[i], 'time_new'] = new_time
+                
+                #Set an upper bound on the visiting hours
+                target_time = datetime.time(22, 0)
+                def visiting_time_limit(input_time):
+                    if input_time<target_time:
+                        return True
+                    else: 
+                        return False
+
+                #Apply the function
+                df['within_visiting_time_limit']=df['time_new'].apply(lambda x: visiting_time_limit(x) )
+                
+                df = df.rename(columns={'within_time_limit': 'within_cum_time_limit'})
+                
+                #Create a new column 'within_time_limit' which is true if both the visiting and cumulative travel time var condition is true and false otherwise
+                df['within_time_limit'] = df['within_visiting_time_limit'] & df['within_cum_time_limit']
+                     
 
 
                 unique_days = df['day'].unique()
@@ -462,8 +488,8 @@ def questionnaire():
                         presence_penalty=0,
                     )
 
-                        result = response.choices[0].text.strip()
-                        print(result)
+                        result2 = response.choices[0].text.strip()
+                        print(result2)
                         add += [f"If you wish to visit more places on day {day} of your trip, {result} are some offbeat tourist destinations that should not be missed."]
                         print(add)
                 add_text = ' '.join(add) #convert list to string
@@ -473,7 +499,7 @@ def questionnaire():
 
                 #Save Results for Mapping: destinantions to plot for itinerary purpose
                 itinerary=df[df['within_time_limit']==True]
-                suggestion=df[df['within_time_limit']==False]
+                suggestion = df[(df['within_time_limit'] == False)]
                 itinerary_destination_set=list(itinerary['destination'])
                 suggestion_destination_set=list(suggestion['destination'])
                 itinerary = itinerary.rename(columns={'Time': 'Time_original','time_new': 'Time', 'day': 'Day'})
@@ -553,6 +579,7 @@ def questionnaire():
                 html_output = itinerary[desired_columns].to_html(classes='table table-bordered', index=False)
                 html_output = html_output.replace('<table', '<table style="background-color: rgb(130, 201, 207)"') 
                 html_result = html_output + text + map_html #add_suggestion +
+                #print(result)
                 return render_template('output_1.html', html_result=html_result)
             
             except :
